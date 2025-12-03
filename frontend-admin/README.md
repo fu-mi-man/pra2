@@ -1,73 +1,78 @@
-# React + TypeScript + Vite
+# 管理画面フロントエンド (frontend-admin)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ゲームポータルサイトの管理画面用フロントエンドプロジェクトです。
 
-Currently, two official plugins are available:
+## 技術スタック
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React** 19.2.0
+- **TypeScript** 5.9.3
+- **Vite** 7.2.5 (rolldown-vite)
+- **pnpm** パッケージマネージャー
+- **Docker** 開発環境
 
-## React Compiler
+## 開発環境構築
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 前提条件
 
-## Expanding the ESLint configuration
+- Docker および Docker Compose がインストールされていること
+- ホストマシンのポート 5173 が空いていること
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 初回セットアップ
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. **依存関係のインストール**（初回のみ）
+```bash
+   docker compose run --rm frontend pnpm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. **開発サーバー起動**
+```bash
+   docker compose up -d
 ```
+
+3. **ブラウザでアクセス**
+   - http://localhost:5173
+
+### 日常的な開発フロー
+```bash
+# 開発サーバー起動
+docker compose up -d
+
+# ログ確認
+docker compose logs -f frontend
+
+# 開発サーバー停止
+docker compose down
+```
+
+## プロジェクト構成
+```
+frontend-admin/
+├── compose.yaml          # Docker Compose設定
+├── frontend/
+│   └── Dockerfile       # Node.js 22 + pnpm環境
+├── src/                 # Reactソースコード
+├── public/              # 静的ファイル
+├── vite.config.ts       # Vite設定
+└── package.json         # 依存関係定義
+```
+
+## 重要な設定
+
+### vite.config.ts
+
+Docker環境で外部アクセスを許可するため、以下の設定が必須:
+```typescript
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',  // Docker環境で必須
+    port: 5173,
+  },
+})
+```
+
+### compose.yaml
+
+- **匿名ボリューム** (`/app/node_modules`) により、ホスト側の node_modules 汚染を回避
+- **ボリュームマウント** でソースコードのホットリロードを実現
+
